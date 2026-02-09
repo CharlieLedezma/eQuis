@@ -1,7 +1,7 @@
 import numpy as np
 #from scipy.integrate import solve_ivp
 #from stewart_release import stewart_dynamic_model
-from .stewart_dynamic import stewart_dynamic_model
+from stewart_dynamic import stewart_dynamic_model
 
 def main():
 #if __name__ == "__main__":
