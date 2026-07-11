@@ -1,7 +1,11 @@
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 #from scipy.integrate import solve_ivp
 #from stewart_release import stewart_dynamic_model
-from stewart_dynamic import stewart_dynamic_model
+from .stewart_dynamic import stewart_dynamic_model
+import workspace_analysis
 
 def main():
 #if __name__ == "__main__":
@@ -10,22 +14,28 @@ def main():
 # Define parameters
     r_b = 1.3  # Radius of base
     phi_b = 50  # Angle between base joints
-    r_p = 1.3  # Radius of platform
+    r_p = 1.7  # Radius of platform
     phi_p = 80  # Angle between platform joints
 
-# Create Stewart Platform instance
+# Initialization: create Stewart Platform instance
     platform = stewart_dynamic_model(r_b, phi_b, r_p, phi_p)
-    pose = [0.2, 0, 0.6, 10, 20, 0]  # [x, y, z, roll, pitch, yaw]
+
+ #Inverse Kinematics(IK)
+ #Use the getIK method to compute the leg lengths for a given pose (position and orientation).
+     #pose = [0.2, 0, 0.6, 10, 20, 0]  # [x, y, z, roll, pitch, yaw]
+    pose = [0, 0, 0, 0, 30, 0]  # [x, y, z, roll, pitch, yaw]
     leg_lengths = platform.getIK(pose)
     platform.plot()
     print("Leg Lengths:", leg_lengths)
 
-# Forward Kinematic
+# Forward Kinematic (FK)
     #starting_pose = [0, 0, 0.2, 0, 0, 0]  # Initial guess for the pose
     #lengths_desired = np.linalg.norm(leg_lengths,axis=1)  # Use the lengths obtained from IK
     #plot=True
     #estimated_pose = platform.getFK(starting_pose, lengths_desired, plot)
-# Kinematic and Force Analysis
+
+
+# KINEMATIC AND FORCE ANALYSIS
 # Get Singular Value Index
 # measures drive capability of the platform, finds max q_dot under unitary x_dot
     singular_value_index = platform.getSingularValueIndex()
@@ -65,5 +75,25 @@ def main():
     ldi = platform.getLDI()
     print("Local Design Index:", ldi)
 
+    #Print Jacobian
+    jac = platform.getJacobian()
+    print("Jacobian", jac)
+    return platform
+
+
+    
+
+#class DataVault:
+#    def __init__(self):
+#        self.value = "Secret Data"    
+
 if __name__ == "__main__":
+    
     main()
+    platform2 = stewart_dynamic_model(r_b, phi_b, r_p, phi_p)
+    workspace_analysis.do_work(platform2)
+    #shared_vault = DataVault()
+    #utils.do_work(shared_vault)
+    
+    
+    
