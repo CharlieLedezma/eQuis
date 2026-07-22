@@ -2,15 +2,16 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-#from __main__ import platform
+from .config import *
+
 
 #WORKSPACE ANALYSIS
 #Use getIndexWorkspacePosition to calculate an index over a range of positions in the workspace.
 #Use getIndexWorkspaceOrientation to calculate an index over a range of orientations for a given position.
 
-def do_work(vault_instance):
+def process(vault_instance):
     #platform = vault_instance
-    return vault_instance
+    print("Hola a todos") 
 
 workspace_limits = [-0.5, 0.5, -0.5, 0.5, 0.1, 0.6]
 RPY = [0, 0, 0]  # Fixed orientation (roll, pitch, yaw)
@@ -24,7 +25,8 @@ choice = 4  # Choice of index calculation (1: Singular Value Index, etc.)
             #     5: self.getLDI # Local design index for Force transmittability (actuator design)
             # }
 
-platform = do_work()
+#####platform = do_work()
+
 workspace_indices_position = platform.getIndexWorkspacePosition(workspace_limits, RPY, N, choice)
 print("Workspace Indices (Position):", workspace_indices_position)
 
