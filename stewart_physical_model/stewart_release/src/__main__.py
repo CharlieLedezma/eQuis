@@ -72,7 +72,6 @@ def kinematic():
  
 if __name__ == "__main__":
     kinematic()
-    #platform2 = stewart_dynamic_model(r_b, phi_b, r_p, phi_p)
-    workspace_analysis.process(platform)     
+    workspace_analysis.ws_analysis()
     
     
