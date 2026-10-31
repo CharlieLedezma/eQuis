@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 def system_dynamics(t, state, params):
     """
-    Defines the first-order ODEs for a 3DOF Lagrangian system.
+    Defines the first-order ODEs for a 3DOF Lagrangian system.'
     state = [q1, q2, q3, q1_dot, q2_dot, q3_dot]
     """
     # 1. Unpack generalized coordinates (q) and velocities (q_dot)
