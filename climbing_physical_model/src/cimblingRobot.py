@@ -81,27 +81,18 @@ class climbing_robot_dynamic:
         #christoffel_matrix = sym.lambdify([q], Γ)
         self.coriolis_matrix = sym.lambdify((m,L,l,q[0],q[1],q[2],dq[0],dq[1],dq[2]),C, 'numpy')
         self.gravity_vector = sym.lambdify((m,L,l,q[0],q[1],q[2]),g, 'numpy')
-        #elf.p1 = sym.lambdify([L, l, q[0], q[1], q[2]],P1, 'numpy')
 
-        
-
-        q_ddot = np.linalg.solve(M, self.rhs)
-
-        return np.concatenate((Q_dot, q_ddot))
-
-        #**************
-
-        self.sympy_rhs = -k * y**2 + sp.sin(t)
-
-        # 3. Lambdify the expression into a fast numpy function
-        # Order of arguments in lambda matches what we will pass in self.rhs
-        self._lambdifed_func = sp.lambdify((t, y, k), self.sympy_rhs, "numpy")
-
-        #****************
+        self.rhs = tau - self.coriolis_matrix  - self.gravity_vector
 
 
-    def rhs(self, t, y, k):    
-         self.rhs = tau - self.coriolis_matrix  - self.gravity_vector
+
+    def rhs(self, t, y):  
+        q = y[:3]
+        q_dot = y[3:]   
+        q_ddot = np.linalg.solve(self.mass_matrix, self.rhs)
+
+        #return[q1_dot, q2_dot, q3_dot]
+        return np.concatenate((q_dot, q_ddot))
     
 
     
@@ -111,6 +102,7 @@ class climbing_robot_dynamic:
              fun=self.rhs, 
              t_span=t_span, 
              y0= initial_state, 
+             method='RK45',        # Excellent default solver for non-stiff dynamics
              args=(k_val,), 
              t_eval=np.linspace(t_span[0], t_span[1], 100),
              rtol=1e-6,
@@ -130,32 +122,6 @@ if __name__ == "__main__":
     solution = robot.solve(initial_state=y0_initial, t_span=time_span, k_val=sys_params)
 
 
-#resolution = 100
-#t_eval = np.linspace(t_span[0], t_span[1], resolution) # Output timestamps
-
-#MM = robot.mass_matrix
-#GG = robot.gravity_vector
-#CC = robot.coriolis_matrix 
-#PP1 = robot.P1
-#exp = robot.p1
-
-#exp = robot.p1(2,1,2,0,-4)
-#print(exp)
-
-
-
-
 """ # Execute numerical integration
-sol = solve_ivp(
-    fun=climbing,
-    t_span=t_span,
-    y0=initial_state,
-    method='RK45',        # Excellent default solver for non-stiff dynamics
-    t_eval=t_eval,
-    args=(sys_params,),   # Pass structural parameters cleanly
-    rtol=1e-6,            # Tighten tolerances for chaotic/multilink systems
-    atol=1e-8
-)
-
 data = np.vstack((sol.t, sol.y)).T
 np.savetxt('climbing_sol.csv', data, delimiter=',', header='t,y', comments='') """
