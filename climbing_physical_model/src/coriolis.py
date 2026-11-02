@@ -38,3 +38,4 @@ for i in range(n):
 
 print('Coriolis Matrix C(q, dq):')
 sp.pprint(C)
+
