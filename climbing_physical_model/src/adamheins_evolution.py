@@ -73,8 +73,6 @@ class adamheis:
         #return sym.Matrix([P1, P2, P3])
         return [P1, P2, P3]
         
-        #Kin = kinematic()
-
     def jacobian(self):
         K= self.kinematic()              
         J1 = K[0].jacobian(self.q)
