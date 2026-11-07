@@ -37,7 +37,7 @@ def manipulator(t, state, params):
         ])
 
     # 6. Generalized forces/torques applied (set to 0 for unforced/passive motion)
-    tau = np.array([0.0, 0.0]) 
+    tau = np.array([0, 0]) 
         
     # 7. Solve for acceleration: q_ddot = M^-1 * (tau - C*q_dot - G)
     rhs = tau - C_qdot - G
@@ -55,8 +55,8 @@ sys_params = (1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.5, 9.81)
 initial_state = [0.1*np.pi, 0.1*np.pi, 0.0, 0.0]
 
 # Time span for the integration
-t_span = (0.0, 1.0)
-resolution = 20
+t_span = (0.0, 10.0)
+resolution = 100
 t_eval = np.linspace(t_span[0], t_span[1], resolution) # Output timestamps
 
 
@@ -77,12 +77,36 @@ np.savetxt('owaki_solution.csv', data, delimiter=',', header='t,y', comments='')
 
 
 
-plt.figure(figsize=(10, 6))
-plt.plot(sol.t, sol.y[0], label='Joint 1 ($q_1$)')
-plt.plot(sol.t, sol.y[1], label='Joint 2 ($q_2$)')
-plt.title('2DOF Lagrangian System Trajectory via solve_ivp')
-plt.xlabel('Time (s)')
-plt.ylabel('Displacement / Angle (rad)')
-plt.legend()
-plt.grid(True)
+#plt.figure(figsize=(10, 6))
+#plt.plot(sol.t, sol.y[2], label='Joint 1 ($q_1$)')
+#plt.plot(sol.t, sol.y[3], label='Joint 2 ($q_2$)')
+#plt.title('2DOF Lagrangian System Trajectory via solve_ivp')
+#plt.xlabel('Time (s)')
+#plt.ylabel('Displacement / Angle (rad)')
+#plt.legend()
+#plt.grid(True)
+#plt.show()
+
+
+# Window 1
+fig1, ax1 = plt.subplots()
+ax1.plot(sol.t, sol.y[0], label='Joint 1 ($q_1$)')
+ax1.plot(sol.t, sol.y[1], label='Joint 2 ($q_2$)')
+ax1.set_title('Angle Variation ')
+ax1.set_xlabel('Time (s)')
+ax1.set_ylabel('Displacement / Angle (rad)')
+ax1.legend()
+ax1.grid(True)
+
+
+# Window 2
+fig2, ax2 = plt.subplots()
+ax2.plot(sol.t, np.rad2deg(sol.y[1]), label='Joint 1 ($dq_1$)')
+ax2.plot(sol.t, np.rad2deg(sol.y[2]), label='Joint 1 ($dq_2$)')
+ax2.set_title('Links Angular speed')
+ax2.set_xlabel('Time (s)')
+ax2.set_ylabel('Angle(o/s)')
+ax2.legend()
+ax2.grid(True)
+
 plt.show()

@@ -22,6 +22,7 @@ M21 = M12
 M22 = m2*l2**2
 M = sp.Matrix([[M11, M12], [M21, M22]])
 
+
 # Derive Coriolis/Centrifugal Matrix C(q, dq) using Christoffel symbols
 C = sp.zeros(2, 2)
 for i in range(2):
@@ -42,6 +43,8 @@ G = sp.Matrix([
 num_M = sp.lambdify((q1, q2, dq1, dq2, m1, m2, l1, l2, g), M, 'numpy')
 num_C = sp.lambdify((q1, q2, dq1, dq2, m1, m2, l1, l2, g), C, 'numpy')
 num_G = sp.lambdify((q1, q2, dq1, dq2, m1, m2, l1, l2, g), G, 'numpy')
+
+#print ("Dimension de num_M: ", num_M(0.1, 0.2, 0, 0,1,2,1,1,9.8))
 
 # Physical parameters mapping
 params = {'m1': 1.0, 'm2': 1.0, 'l1': 1.0, 'l2': 1.0, 'g': 9.81}
@@ -66,16 +69,19 @@ def robot_dynamics_ode(t, x):
     """State-space equations for solve_ivp: x = [q1, q2, dq1, dq2]"""
     q_curr = x[0:2]
     dq_curr = x[2:4]
+   
     
     # 1. Compute physical robot matrices
     M_mat, C_mat, G_mat = get_dynamics(q_curr, dq_curr)
     G_mat = G_mat.flatten() # Ensure 1D array consistency
+    #print ("Dimension de C_mat: ",M_mat.shape)
+    #print ("El tipo de C-mat es", type(M_mat))
     
     # 2. Compute Tracking Controller (Computed Torque Control / Feedback Linearization)
     q_d, dq_d, ddq_d = desired_trajectory(t)
     
-    Kp = np.diag([100.0, 100.0]) # Proportional Gain
-    Kd = np.diag([20.0, 20.0])   # Derivative Gain
+    Kp = np.diag([1.0, 1.0]) # Proportional Gain
+    Kd = np.diag([2.0, 2.0])   # Derivative Gain
     
     e = q_d - q_curr
     de = dq_d - dq_curr
@@ -83,12 +89,25 @@ def robot_dynamics_ode(t, x):
     # Control law: Tau = M*(ddq_d + Kd*de + Kp*e) + C*dq + G
     aq = ddq_d + Kd @ de + Kp @ e
     tau = M_mat @ aq + C_mat @ dq_curr + G_mat
+
+    #tau = np.array([0, 0])
+    #rhs = tau - C_mat @ dq_curr - G_mat
+
+    #ddq_curr = np.linalg.solve(M_mat, rhs)  # More efficient than explicit inverse
+
+    #print ("Dimension de tau: ",tau.shape)
     
     # 3. Solve Forward Dynamics for Acceleration: ddq = M^-1 * (Tau - C*dq - G)
     ddq_curr = np.linalg.inv(M_mat) @ (tau - C_mat @ dq_curr - G_mat)
-    
+
+
+    #print ("Dimension de ddq_curr: ",ddq_curr.shape)
     # Return state derivatives [dq1, dq2, ddq1, ddq2]
     return np.concatenate([dq_curr, ddq_curr])
+
+
+
+
 
 # =============================================================================
 # 3. RUN SIMULATION
@@ -106,6 +125,8 @@ print(print(f"Simulation completed successfully with {len(sol.t)} time steps!"))
 plt.figure(figsize=(10, 6))
 plt.plot(sol.t, sol.y[0], label='Joint 1 ($dq_2$)')
 plt.plot(sol.t, sol.y[1], label='Joint 2 ($dq_3$)')
+plt.plot(sol.t, np.sin(sol.t), label='Desired q1 trajectory', linestyle='--')
+plt.plot(sol.t, np.cos(sol.t), label='Desired q1 trajectory', linestyle=':')
 #plt.plot(sol.t, desired_trajectory[0], label='Joint 3 ($dq_3$)')
 # #plt.plot(solution.t, solution.y[2], label='Joint 3 ($q_3$)')
 plt.title('Car Displacement')
