@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
 import sys
 
 #dynamic_model:
@@ -123,29 +124,13 @@ def compute_auxiliary_matrices(N):
 Cm = np.zeros((N,N))
 Sm = np.zeros((N,N))
 A, D, Va, Ka, J, K, J2, Jf, HH, J3, J1, NN, T, j, e, k = compute_auxiliary_matrices(N)
+u = np.zeros((N-1, 1))
 
 def dynamic_model( t, x):
-    #print(x.reshape(22))
-    #p = self.params
-    #N = p.N
-    #l = p.l
-    #m = p.m
-    #g = p.g
-    #alphaA = p.alphaA
-    #omega = p.omega
-    #delta = p.delta
-    #offset = p.offset
-    #kd = p.kd
-    #kp = p.kp
-    #umax = p.umax
-    #I = p.I
 
-    #A, D, Va, Ka, J, K, J2, Jf, HH, J3, J1, NN, T, j, e, k, acumulador = compute_auxiliary_matrices(N)
-
-    #size of x = (22,22)
-
-    phi = x[:N]
-    #print("El tamnho de x es?", x.shape)
+    #size of x = (8,1)
+    #print("shape of x:", type(x))
+    phi = x[:N]         #First
     p = x[N:N+2]
     phiDot = x[N+2:2*N+2]
     pDot = x[2*N+2:]
@@ -183,9 +168,6 @@ def dynamic_model( t, x):
                 #Sm[o1,o2]=np.sin(float(theta[o2]))
 
 
-    #print("Forma inicial de Cm?", Cm)            
-    #sys.exit(0)
-
     A = J@J.T
     B = (1/N)*j
     C = (1/N)*j.T
@@ -202,7 +184,7 @@ def dynamic_model( t, x):
     CC = -DD*C@np.linalg.inv(A)
 
 
-    u = np.zeros((N-1, 1))
+    #u = np.zeros((N-1, 1))
 
     # Loop for phi, phiDot, phiDotDot calculations and control input u calculation
     for i in range(1, N):  # Python uses 0-based indexing
@@ -216,9 +198,7 @@ def dynamic_model( t, x):
 
 
     # # Define matrices M and W
-    M = I * np.eye(N) + m * l**2 * Sm * Va * Sm + m * l**2 * Cm * Va * Cm
-
-    
+    M = I * np.eye(N) + m * l**2 * Sm * Va * Sm + m * l**2 * Cm * Va * Cm    
     W = m * l**2 * Sm * Va * Cm - m * l**2 * Cm * Va * Sm
 
     # # Define phi2 and phi2Dot
@@ -277,12 +257,6 @@ def dynamic_model( t, x):
 
     return xDot
 
-    #self.count += 1
-
-
-
-
-
 
 theta = np.zeros((N, 1))
 thetaDot = np.zeros((N, 1))
@@ -297,10 +271,99 @@ qaDot = phiDot
 quDot = np.array([thetaDot[-1, 0], pDot[0, 0], pDot[1, 0]])
 
 t_span = (0.0, 10.0)
-t_eval = np.linspace(t_span[0], t_span[1], 1000)
+t_eval = np.linspace(t_span[0], t_span[1], 200)
 x0 = np.concatenate((qa.flatten(), qu.flatten(), qaDot.flatten(), quDot.flatten()))
 sol = solve_ivp(dynamic_model, t_span, x0, t_eval=t_eval, method='RK45', vectorized=True, dense_output=True)
+
+
 
 print(print(f"Simulation completed successfully with {len(sol.t)} time steps!"))       
 data = np.vstack((sol.t, sol.y)).T
 np.savetxt('snake.csv', data, delimiter=',', header='t,y', comments='')        
+
+print(u.shape)
+
+
+
+# #win 1
+# fig1, ax1 = plt.subplots()
+# for i  in range(1, N):
+#     phi_required_plot = alphaA * np.sin(omega * sol.t + (i-1) * delta) + offset
+#     # ax1.plot(sol.t, phi_required_plot, label='($q_{i}$)')
+#     ax1.plot(sol.t, phi_required_plot, label=f"q_{i}")
+# ax1.set_title('Reference Serpenoide Plot')
+# ax1.set_xlabel('Time (s)')
+# ax1.set_ylabel('Angular Displacement(m)-Speed(rad)')
+# ax1.legend()
+# ax1.grid(True)
+
+
+
+#win 2
+fig1, ax5 = plt.subplots()
+#for i  in range(1, N):
+#phi_required_plot = alphaA * np.sin(omega * sol.t + (2-1) * delta) + offset
+ax5.plot(sol.t, alphaA * np.sin(omega * sol.t + (1-1) * delta) + offset, label='Joint 1 ($phi_required$)')
+ax5.plot(sol.t, sol.y[0], label=' 1 ($y[0]$)')
+#ax5.plot(sol.t, sol.y[1], label='Joint 1 ($y[1]$)')
+ax5.set_title('Reference Plot')
+ax5.set_xlabel('Time (s)')
+ax5.set_ylabel('Angular Displacement(m)-Speed(rad)')
+ax5.legend()
+ax5.grid(True)
+
+
+
+
+# #Window 1
+# fig4, ax4 = plt.subplots()
+# #ax1.figure(figsize=(10, 6))
+# ax4.plot(sol.t, sol.y[9], label=' ($q_19$)')
+# ax4.plot(sol.t, sol.y[10], label=' ($q_19$)')
+# ax4.set_title('Robot Displacement P Point ')
+# ax4.set_xlabel('Time (s)')
+# ax4.set_ylabel('Displacement(m)-Speed(m/s)')
+# ax4.legend()
+# ax4.grid(True)
+
+
+
+
+# # Window 2
+fig2, ax2 = plt.subplots()
+#ax2.figure(figsize=(10, 6))
+ax2.plot(sol.t, sol.y[0], label=' ($q_1$)')
+ax2.plot(sol.t, sol.y[1], label=' ($q_2$)')
+ax2.plot(sol.t, sol.y[2], label=' ($q_3$)')
+ax2.plot(sol.t, sol.y[3], label=' ($q_4$)')
+ax2.plot(sol.t, sol.y[4], label=' ($q_5$)')
+ax2.plot(sol.t, sol.y[5], label=' ($q_6$)')
+ax2.plot(sol.t, sol.y[6], label=' ($q_7$)')
+ax2.plot(sol.t, sol.y[7], label=' ($q_8$)')
+ax2.plot(sol.t, sol.y[8], label=' ($q_9$)')
+ax2.set_title('Links Angle Variations')
+ax2.set_xlabel('Time (s)')
+ax2.set_ylabel('Angle(o)')
+ax2.legend()
+ax2.grid(True)
+
+
+# # Window 3
+fig3, ax3 = plt.subplots()
+# #ax1.figure(figsize=(10, 6))
+ax3.plot(sol.t, np.rad2deg(sol.y[11]), label=' ($q_1$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[12]), label=' ($q_2$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[13]), label=' ($q_3$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[14]), label=' ($q_4$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[15]), label=' ($q_5$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[16]), label=' ($q_6$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[17]), label=' ($q_7$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[18]),  label='($q_8$)')
+ax3.plot(sol.t, np.rad2deg(sol.y[19]), label=' ($q_9$)')
+ax3.set_title('Links Angular Velocity')
+ax3.set_xlabel('Time (s)')
+ax3.set_ylabel('Angle(o/s)')
+ax3.legend()
+ax3.grid(True) 
+
+plt.show()

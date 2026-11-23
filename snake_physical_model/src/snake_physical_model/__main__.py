@@ -27,14 +27,31 @@ def main():
 
     x0 = np.concatenate((qa.flatten(), qu.flatten(), qaDot.flatten(), quDot.flatten()))
 
+
+
+#    sol = solve_ivp(
+#
+#         lambda t, y: dynamic_model.dynamic_model(t, y),
+#         [t[0], t[-1]],
+#         x0,
+#         method="RK45",
+#         vectorized=True,
+#         dense_output=True,
+#    )
+    t_span = (0, 2)
+    t_eval=np.linspace(t_span[0], t_span[1], 100)
+
     sol = solve_ivp(
-         lambda t, y: dynamic_model.dynamic_model(t, y),
-         [t[0], t[-1]],
-         x0,
-         method="RK45",
-         vectorized=True,
-         dense_output=True,
-    )
+        fun= dynamic_model.DynamicModel.dynamic_model,
+        t_span=t_span,
+        y0=x0,
+        t_eval=t_eval,
+        method="RK45",
+        vectorized=True,
+        dense_output=True
+        )
+    return sol
+
     #print(dynamic_model.count)
     print("Hola")
 

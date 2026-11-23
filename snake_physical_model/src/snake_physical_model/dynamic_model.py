@@ -1,10 +1,12 @@
 import numpy as np
 from numpy import sin, cos
+from snake_physical_model import parameters
 
 #from sympy import *
 
 class DynamicModel:
     def __init__(self, params):
+
         self.params = params
         self.count = 0
 
@@ -133,6 +135,7 @@ class DynamicModel:
         # ==============================================================================================================
 
         # Initialize u as a zero array of size N-1
+        # u -> column vector (8,1), with N = 9
         u = np.zeros((N-1, 1))
 
         # Loop for phi, phiDot, phiDotDot calculations and control input u calculation
@@ -200,6 +203,11 @@ class DynamicModel:
 
         self.count += 1
 
-        #return xDot
+        return xDot
         #return self.count
         
+""" if __name__ == "__main__":
+        objeto = parameters.Parameters()
+        N = objeto.N
+        t = objeto.t
+        robot = DynamicModel(objeto) """

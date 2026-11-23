@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/snake_physical_model/__init__.py
+src/snake_physical_model/__main__.py
+src/snake_physical_model/dynamic_model.py
+src/snake_physical_model/parameters.py
+src/snake_physical_model.egg-info/PKG-INFO
+src/snake_physical_model.egg-info/SOURCES.txt
+src/snake_physical_model.egg-info/dependency_links.txt
+src/snake_physical_model.egg-info/top_level.txt

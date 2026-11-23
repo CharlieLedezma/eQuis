@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 #from scipy.integrate import solve_ivp
 from .config import *
-from . import workspace_analysis
+from .import workspace_analysis
 from .stewart_dynamic import stewart_dynamic_model
 
 
@@ -72,6 +72,6 @@ def kinematic():
  
 if __name__ == "__main__":
     kinematic()
-    workspace_analysis.ws_analysis()
+    #workspace_analysis.ws_analysis()
     
     

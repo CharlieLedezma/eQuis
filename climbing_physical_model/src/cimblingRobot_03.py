@@ -36,7 +36,7 @@ class climbing_robot_dynamic:
         self.I3 = m1 * 2*L ** 2 / 12
 
         state_vars = [*self.q, *self.dq, self.m1, self.L, self.phi, self.b, self.g]
-        self.params = {'m1': 1.0, 'L': 0.5, 'phi': np.rad2deg(30), 'b': 0.2, 'g': 9.81}
+        self.params = {'m1': 1.0, 'L': 0.25, 'phi': np.rad2deg(30), 'b': 0.2, 'g': 9.81}
 
         #self.ddq_numeric = sym.lambdify(state_vars,ddq_expr,'numpy')
 
@@ -149,18 +149,18 @@ class climbing_robot_dynamic:
         # 2. Compute Tracking Controller (Computed Torque Control / Feedback Linearization)
         #q_d, dq_d, ddq_d = self.desired_trajectory(t)
 
-        q_d = np.array([1*t ,np.deg2rad(35), np.deg2rad(65)])
-        dq_d = np.array([1,0,0])
-        ddq_d = np.array([0,0,0])
+        #q_d = np.array([1*t ,np.deg2rad(35), np.deg2rad(65)])
+        #dq_d = np.array([1,0,0])
+        #ddq_d = np.array([0,0,0])
 
-        #q_d = np.array([3, np.sin(t), np.cos(t)])
-        #dq_d = np.array([0, np.cos(t), -np.sin(t)])
-        #ddq_d = np.array([0, -np.sin(t), -np.cos(t)])
+        q_d = np.array([100*np.sin(t), np.deg2rad(35), np.deg2rad(65)])
+        dq_d = np.array([np.cos(t),0,0])
+        ddq_d = np.array([-np.sin(t), 0,0])
 
 
 
-        Kp = np.diag([30.0, 30.0, 50.0]) # Proportional Gain
-        Kd = np.diag([20.0, 20.0, 20.0])   # Derivative Gain
+        Kp = np.diag([1000.0, 30.0, 50.0]) # Proportional Gain
+        Kd = np.diag([50.0, 20.0, 20.0])   # Derivative Gain
 
         e = q_d - q_curr
         de = dq_d - dq_curr
@@ -214,9 +214,9 @@ if __name__ == "__main__":
     # Window 1
     fig1, ax1 = plt.subplots()
     #ax1.figure(figsize=(10, 6))
-    ax1.plot(solution.t, np.rad2deg(solution.y[3]), label='Joint 1 ($q_1$)')
-    #ax1.plot(solution.t, np.rad2deg(solution.y[3]), label='Joint 2 ($dq_1$)')
-    #ax1.plot(solution.t, np.deg2rad(35)*(solution.t/solution.t), label='Ref:($5*t)', linestyle='--')
+    ax1.plot(solution.t, solution.y[0], label='($q_1$)')
+    ax1.plot(solution.t, solution.y[3], label='($dq_1$)')
+    #ax1.plot(solution.t, np.sin(solution.t), label='Ref:($5*t)', linestyle='--')
     ax1.set_title('Robot Displacement and Speed over Pole ')
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Displacement(m)-Speed(m/s)')
@@ -229,8 +229,8 @@ if __name__ == "__main__":
     # Window 2
     fig2, ax2 = plt.subplots()
     #ax2.figure(figsize=(10, 6))
-    ax2.plot(solution.t, np.rad2deg(solution.y[1]), label='Joint 1 ($q_1$)')
-    ax2.plot(solution.t, np.rad2deg(solution.y[2]), label='Joint 1 ($q_2$)')
+    ax2.plot(solution.t, np.rad2deg(solution.y[1]), label='($q_1$)')
+    ax2.plot(solution.t, np.rad2deg(solution.y[2]), label='($q_2$)')
     ax2.set_title('Links Angle Variations')
     ax2.set_xlabel('Time (s)')
     ax2.set_ylabel('Angle(o)')
@@ -241,8 +241,8 @@ if __name__ == "__main__":
     # Window 3
     fig3, ax3 = plt.subplots()
     #ax1.figure(figsize=(10, 6))
-    ax3.plot(solution.t, np.rad2deg(solution.y[4]), label='Joint 1 ($dq_2$)')
-    ax3.plot(solution.t, np.rad2deg(solution.y[5]), label='Joint 2 ($dq_3$)')
+    ax3.plot(solution.t, np.rad2deg(solution.y[4]), label='($dq_2$)')
+    ax3.plot(solution.t, np.rad2deg(solution.y[5]), label='($dq_3$)')
     ax3.set_title('Links Angular Velocity')
     ax3.set_xlabel('Time (s)')
     ax3.set_ylabel('Angle(o/s)')

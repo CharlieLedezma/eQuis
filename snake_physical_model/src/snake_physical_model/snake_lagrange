@@ -1,0 +1,145 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+
+# --- Robot Parameters ---
+N = 4                  # Number of links
+m = 1.0                # Mass of each link (kg)
+L = 0.2                # Half-length of each link (m) -> total link length = 2L
+J = (1/3) * m * L**2   # Moment of inertia of each link
+c_t = 0.5              # Tangential viscous friction coefficient
+c_n = 5.0              # Normal viscous friction coefficient (c_n > c_t drives forward motion)
+
+# Precompute structural matrices for kinematics (Liljebäck et al. formulation)
+A = np.zeros((N - 1, N))
+D = np.zeros((N - 1, N))
+for i in range(N - 1):
+    A[i, i] = 1.0
+    A[i, i + 1] = 1.0
+    D[i, i] = 1.0
+    D[i, i + 1] = -1.0
+
+e = np.ones((N, 1))
+DDT_inv = np.linalg.inv(D @ D.T)
+K = A.T @ DDT_inv @ D  # Maps link angle trig functions to link CoM positions
+
+def get_mass_matrix(q):
+    """Computes the (N+2)x(N+2) symmetric positive-definite Mass Matrix M(q)."""
+    theta = q[:N]
+    sin_t = np.sin(theta)
+    cos_t = np.cos(theta)
+    
+    S = np.diag(sin_t)
+    C = np.diag(cos_t)
+    
+    # Rotational inertia submatrix M_theta
+    M_theta = J * np.eye(N) + m * (L**2) * (S @ K.T @ K @ S + C @ K.T @ K @ C)
+    
+    # Assemble full Mass Matrix M(q) = diag(M_theta, N*m, N*m)
+    M = np.zeros((N + 2, N + 2))
+    M[:N, :N] = M_theta
+    M[N, N] = N * m
+    M[N + 1, N + 1] = N * m
+    return M
+
+def get_coriolis_matrix(q, dq):
+    """Computes C(q, dq) numerically using Christoffel symbols."""
+    dim = len(q)
+    C = np.zeros((dim, dim))
+    eps = 1e-6
+    
+    # Compute partial derivatives dM / dq_k using central differences
+    dM = np.zeros((dim, dim, dim))
+    for k in range(dim):
+        q_plus = q.copy()
+        q_minus = q.copy()
+        q_plus[k] += eps
+        q_minus[k] -= eps
+        dM[k] = (get_mass_matrix(q_plus) - get_mass_matrix(q_minus)) / (2 * eps)
+        
+    # Christoffel symbols: c_ijk = 0.5 * (dM_ij/dq_k + dM_ik/dq_j - dM_jk/dq_i)
+    for i in range(dim):
+        for j in range(dim):
+            for k in range(dim):
+                c_ijk = 0.5 * (dM[k, i, j] + dM[j, i, k] - dM[i, j, k])
+                C[i, j] += c_ijk * dq[k]
+    return C
+
+def get_friction_forces(q, dq):
+    """Computes generalized friction forces mapped to generalized coordinates."""
+    theta = q[:N]
+    dtheta = dq[:N]
+    v_x, v_y = dq[N], dq[N + 1]
+    
+    sin_t = np.sin(theta)
+    cos_t = np.cos(theta)
+    S = np.diag(sin_t)
+    C = np.diag(cos_t)
+    
+    # Link CoM velocities in global frame
+    dx = -L * (K.T @ S @ dtheta) + e.flatten() * v_x
+    dy =  L * (K.T @ C @ dtheta) + e.flatten() * v_y
+    
+    # Anisotropic viscous friction forces on each link in global frame
+    f_x = -(c_t * (cos_t**2) + c_n * (sin_t**2)) * dx - (c_t - c_n) * sin_t * cos_t * dy
+    f_y = -(c_t - c_n) * sin_t * cos_t * dx - (c_t * (sin_t**2) + c_n * (cos_t**2)) * dy
+    
+    # Map link forces to generalized coordinates via Jacobian transpose
+    tau_f_theta = L * (S @ K @ f_x - C @ K @ f_y)
+    tau_f_px = np.sum(f_x)
+    tau_f_py = np.sum(f_y)
+    
+    return np.concatenate([tau_f_theta, [tau_f_px, tau_f_py]])
+
+def get_control_torques(t, q, dq):
+    """Lateral undulation gait controller (serpenoid curve)."""
+    # Relative joint angles: phi_i = theta_i - theta_{i+1}
+    phi = D @ q[:N]
+    dphi = D @ dq[:N]
+    
+    # Serpenoid gait parameters
+    alpha = 0.4   # Amplitude (rad)
+    omega = 2.5   # Frequency (rad/s)
+    delta = 0.8   # Phase shift between joints (rad)
+    kp, kd = 15.0, 2.0
+    
+    # Desired relative joint angles
+    i_idx = np.arange(N - 1)
+    phi_ref = alpha * np.sin(omega * t + i_idx * delta)
+    dphi_ref = alpha * omega * np.cos(omega * t + i_idx * delta)
+    
+    # PD control law for joint torques u in R^(N-1)
+    u = kp * (phi_ref - phi) + kd * (dphi_ref - dphi)
+    
+    # Map (N-1) joint torques to N link generalized coordinates
+    tau_act = np.zeros(N + 2)
+    tau_act[:N] = D.T @ u
+    return tau_act
+
+def snake_ode(t, state):
+    """First-order ODE system for scipy.integrate.solve_ivp."""
+    dim = N + 2
+    q = state[:dim]
+    dq = state[dim:]
+    
+    M = get_mass_matrix(q)
+    C = get_coriolis_matrix(q, dq)
+    tau_friction = get_friction_forces(q, dq)
+    tau_control = get_control_torques(t, q, dq)
+    
+    # Solve M(q) * ddq = tau_control + tau_friction - C(q, dq) * dq
+    rhs = tau_control + tau_friction - C @ dq
+    ddq = np.linalg.solve(M, rhs)
+    
+    return np.concatenate([dq, ddq])
+
+# --- Run Simulation ---
+q0 = np.zeros(N + 2)
+dq0 = np.zeros(N + 2)
+state0 = np.concatenate([q0, dq0])
+
+t_span = (0, 10.0)
+t_eval = np.linspace(0, 10.0, 500)
+
+sol = solve_ivp(snake_ode, t_span, state0, method='RK45', t_eval=t_eval, rtol=1e-6, atol=1e-8)
+
+print(f"Final CoM Position: x = {sol.y[N, -1]:.3f} m, y = {sol.y[N+1, -1]:.3f} m")

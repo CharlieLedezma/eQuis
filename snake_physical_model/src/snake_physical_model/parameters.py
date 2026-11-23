@@ -48,6 +48,8 @@ class Parameters:
         self.qmax = 400 * self.dt
         self.I = (self.m*(2*self.l)**2)/3
 
+        #return self.N, self.m
+
 
 #param = Parameters()
     # def load_from_yaml(self, yaml_file):
